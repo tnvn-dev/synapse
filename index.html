@@ -1,0 +1,937 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Synapse — Học lập trình AI Coding thực chiến</title>
+  <meta name="description" content="Synapse Academy dạy bạn dùng AI agent để viết, sửa và ship code thực chiến. Lộ trình từ zero đến full-stack với trợ lý AI bên cạnh." />
+  <meta name="theme-color" content="#0C1108" />
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Synapse — Học lập trình AI Coding thực chiến" />
+  <meta property="og:description" content="Biến ý tưởng thành sản phẩm: code cùng AI trong vài phút. Lộ trình thực chiến, mentor đồng hành." />
+  <meta property="og:locale" content="vi_VN" />
+  <meta property="og:site_name" content="Synapse Academy" />
+  <meta property="og:url" content="https://synapse.edu.vn" />
+  <meta property="og:image" content="https://synapse.edu.vn/og-cover.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ============ TOKENS ============ */
+    :root {
+      --bg: #0C1108;
+      --bg2: #11180B;
+      --surface: #161E0F;
+      --surface2: #1C2614;
+      --border: #2C3A1E;
+      --border-soft: #232E18;
+      --text: #ECF3E2;
+      --muted: #9DAA8B;
+      --faint: #65725A;
+      --accent: #A6D95F;        /* brand lime */
+      --accent-2: #6FE08A;      /* "AI accepted" green */
+      --accent-warm: #E0C98B;   /* token: function names */
+      --tok-num: #E6B45C;
+      --glow: rgba(166,217,95,.35);
+
+      --mono: 'JetBrains Mono', ui-monospace, monospace;
+      --sans: 'Space Grotesk', system-ui, sans-serif;
+
+      --maxw: 1180px;
+      --radius: 14px;
+      --ease: cubic-bezier(.16,.84,.44,1);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; scroll-padding-top: 86px; }
+
+    body {
+      font-family: var(--sans);
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    /* ambient grid + glow backdrop */
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(700px 500px at 78% -5%, rgba(166,217,95,.16), transparent 60%),
+        radial-gradient(600px 600px at 0% 100%, rgba(111,224,138,.08), transparent 55%),
+        linear-gradient(transparent 0 31px, rgba(44,58,30,.18) 31px) 0 0 / 32px 32px,
+        linear-gradient(90deg, transparent 0 31px, rgba(44,58,30,.18) 31px) 0 0 / 32px 32px;
+      z-index: -1;
+      pointer-events: none;
+      mask-image: radial-gradient(120% 80% at 50% 0%, #000 40%, transparent 100%);
+    }
+
+    a { color: inherit; text-decoration: none; }
+    img { max-width: 100%; display: block; }
+    ::selection { background: var(--accent); color: #0C1108; }
+
+    .wrap { width: 100%; max-width: var(--maxw); margin: 0 auto; padding: 0 24px; }
+
+    /* shared eyebrow = code comment */
+    .eyebrow {
+      font-family: var(--mono);
+      font-size: .82rem;
+      color: var(--accent-2);
+      letter-spacing: .02em;
+      margin-bottom: 18px;
+      display: inline-block;
+    }
+    .eyebrow .c { color: var(--faint); }
+
+    h2.title {
+      font-size: clamp(1.9rem, 4.4vw, 3rem);
+      font-weight: 600;
+      line-height: 1.1;
+      letter-spacing: -.02em;
+    }
+    .lead { color: var(--muted); font-size: 1.05rem; max-width: 560px; margin-top: 14px; }
+
+    .section { padding: clamp(70px, 11vw, 130px) 0; position: relative; }
+
+    /* ============ BUTTONS ============ */
+    .btn {
+      font-family: var(--mono);
+      font-size: .92rem;
+      font-weight: 500;
+      border: 1px solid transparent;
+      border-radius: 10px;
+      padding: 13px 22px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      transition: transform .2s var(--ease), box-shadow .25s var(--ease), background .2s;
+      white-space: nowrap;
+    }
+    .btn-primary {
+      background: var(--accent);
+      color: #0A0E1C;
+      box-shadow: 0 8px 28px -10px var(--glow);
+    }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 14px 34px -10px var(--glow); }
+    .btn-ghost {
+      background: transparent;
+      color: var(--text);
+      border-color: var(--border);
+    }
+    .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* ============ HEADER ============ */
+    header {
+      position: fixed; top: 0; left: 0; right: 0;
+      z-index: 100;
+      transition: background .3s, border-color .3s, backdrop-filter .3s;
+      border-bottom: 1px solid transparent;
+    }
+    header.scrolled {
+      background: rgba(12,17,8,.78);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border-bottom-color: var(--border-soft);
+    }
+    .nav { display: flex; align-items: center; justify-content: space-between; height: 72px; }
+    .logo {
+      font-family: var(--mono);
+      font-weight: 700;
+      font-size: 1.18rem;
+      letter-spacing: -.02em;
+      display: flex; align-items: center;
+    }
+    .logo .b { color: var(--accent); }
+    .logo .caret {
+      color: var(--accent-2);
+      animation: blink 1.1s steps(1) infinite;
+      margin-left: 1px;
+    }
+    @keyframes blink { 50% { opacity: 0; } }
+
+    .menu { display: flex; align-items: center; gap: 34px; }
+    .menu a.nav-link {
+      font-size: .95rem;
+      color: var(--muted);
+      position: relative;
+      transition: color .2s;
+    }
+    .menu a.nav-link::after {
+      content: ""; position: absolute; left: 0; bottom: -6px;
+      width: 0; height: 2px; background: var(--accent-2);
+      transition: width .25s var(--ease);
+    }
+    .menu a.nav-link:hover { color: var(--text); }
+    .menu a.nav-link:hover::after { width: 100%; }
+
+    .hamburger {
+      display: none; flex-direction: column; gap: 5px;
+      background: none; border: none; cursor: pointer; padding: 8px;
+    }
+    .hamburger span { width: 24px; height: 2px; background: var(--text); border-radius: 2px; transition: .3s var(--ease); }
+    .hamburger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+    .hamburger.open span:nth-child(2) { opacity: 0; }
+    .hamburger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+    /* ============ HERO ============ */
+    .hero { padding-top: 150px; padding-bottom: 90px; }
+    .hero-grid {
+      display: grid;
+      grid-template-columns: 1.05fr 1fr;
+      gap: 56px;
+      align-items: center;
+    }
+    .hero-badge {
+      font-family: var(--mono);
+      font-size: .8rem;
+      color: var(--muted);
+      border: 1px solid var(--border);
+      background: var(--surface);
+      border-radius: 100px;
+      padding: 7px 14px;
+      display: inline-flex; align-items: center; gap: 8px;
+      margin-bottom: 26px;
+    }
+    .hero-badge .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent-2); box-shadow: 0 0 0 4px rgba(111,224,138,.18); }
+    .hero h1 {
+      font-size: clamp(2.3rem, 5.4vw, 3.9rem);
+      font-weight: 600;
+      line-height: 1.06;
+      letter-spacing: -.03em;
+    }
+    .hero h1 .hl {
+      color: var(--accent);
+      position: relative;
+    }
+    .hero h1 .hl::after {
+      content: "";
+      position: absolute; left: 0; right: 0; bottom: 4px; height: 12px;
+      background: linear-gradient(90deg, rgba(166,217,95,.25), rgba(111,224,138,.2));
+      z-index: -1; border-radius: 3px;
+    }
+    .hero p.sub { color: var(--muted); font-size: 1.12rem; margin-top: 22px; max-width: 480px; }
+    .hero-cta { display: flex; gap: 14px; margin-top: 34px; flex-wrap: wrap; }
+    .hero-meta { margin-top: 30px; display: flex; gap: 22px; font-family: var(--mono); font-size: .82rem; color: var(--faint); flex-wrap: wrap; }
+    .hero-meta b { color: var(--accent-2); font-weight: 500; }
+
+    /* ---- editor window (signature) ---- */
+    .editor {
+      background: linear-gradient(180deg, #141C0D, #10170A);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: 0 40px 80px -40px rgba(0,0,0,.7), 0 0 0 1px rgba(166,217,95,.05);
+      overflow: hidden;
+      position: relative;
+    }
+    .editor::before {
+      content: ""; position: absolute; inset: 0;
+      background: radial-gradient(400px 200px at 80% 0%, rgba(166,217,95,.12), transparent);
+      pointer-events: none;
+    }
+    .editor-bar {
+      display: flex; align-items: center; gap: 14px;
+      padding: 13px 16px;
+      border-bottom: 1px solid var(--border-soft);
+      background: rgba(255,255,255,.015);
+    }
+    .lights { display: flex; gap: 7px; }
+    .lights i { width: 11px; height: 11px; border-radius: 50%; display: block; }
+    .lights i:nth-child(1){ background:#FF6B5E; } .lights i:nth-child(2){ background:#E6B45C; } .lights i:nth-child(3){ background:#6FE08A; }
+    .editor-file { font-family: var(--mono); font-size: .78rem; color: var(--muted); }
+    .editor-file .ext { color: var(--faint); }
+    .editor-body {
+      font-family: var(--mono);
+      font-size: .86rem;
+      line-height: 1.85;
+      padding: 20px 20px 24px;
+      counter-reset: ln;
+      min-height: 270px;
+    }
+    .code-line {
+      display: flex; gap: 16px;
+      opacity: 0; transform: translateY(4px);
+      transition: opacity .35s, transform .35s;
+    }
+    .code-line.shown { opacity: 1; transform: none; }
+    .code-line::before {
+      counter-increment: ln;
+      content: counter(ln);
+      color: var(--faint);
+      width: 16px; text-align: right; flex: none;
+      user-select: none;
+    }
+    .tok-com { color: var(--faint); font-style: italic; }
+    .tok-key { color: var(--accent); }
+    .tok-fn  { color: var(--accent-warm); }
+    .tok-str { color: var(--accent-2); }
+    .tok-num { color: var(--tok-num); }
+    .ind { padding-left: 1.5em; }
+    .ind2 { padding-left: 3em; }
+
+    /* ghost suggestion -> accepted */
+    .ghost { color: var(--accent-2); opacity: .42; transition: opacity .4s; }
+    .code-line.accepted .ghost { opacity: 1; }
+    .accept-hint {
+      margin-top: 12px;
+      margin-left: 32px;
+      font-family: var(--mono); font-size: .74rem;
+      color: var(--faint);
+      display: inline-flex; align-items: center; gap: 8px;
+      opacity: 0; transition: opacity .4s;
+    }
+    .accept-hint.show { opacity: 1; }
+    .accept-hint .key {
+      border: 1px solid var(--border); border-radius: 5px;
+      padding: 1px 7px; color: var(--accent-2);
+      background: rgba(111,224,138,.08);
+    }
+    .cursor {
+      display: inline-block; width: 8px; height: 1.05em;
+      background: var(--accent); margin-left: 2px;
+      vertical-align: text-bottom;
+      animation: blink 1s steps(1) infinite;
+    }
+
+    /* ============ ABOUT ============ */
+    .about-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center; }
+    .about-text p { color: var(--muted); margin-top: 16px; }
+    .about-text p strong { color: var(--text); font-weight: 600; }
+
+    .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .stat {
+      background: var(--surface);
+      border: 1px solid var(--border-soft);
+      border-radius: var(--radius);
+      padding: 26px 24px;
+      position: relative;
+      overflow: hidden;
+    }
+    .stat .plus { font-family: var(--mono); color: var(--accent-2); font-size: .9rem; }
+    .stat .num {
+      font-family: var(--mono); font-weight: 700;
+      font-size: clamp(1.8rem, 4vw, 2.5rem);
+      letter-spacing: -.03em; line-height: 1;
+      margin-top: 6px;
+      color: var(--text);
+    }
+    .stat .lbl { color: var(--muted); font-size: .9rem; margin-top: 8px; }
+    .stat::after {
+      content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+      background: linear-gradient(var(--accent), var(--accent-2));
+      opacity: .6;
+    }
+
+    /* ============ COURSES ============ */
+    .courses-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 30px; margin-bottom: 50px; flex-wrap: wrap; }
+    .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border-soft);
+      border-radius: var(--radius);
+      padding: 30px 28px;
+      transition: transform .3s var(--ease), border-color .3s, box-shadow .3s;
+      position: relative;
+      display: flex; flex-direction: column;
+    }
+    .card:hover { transform: translateY(-6px); border-color: var(--accent); box-shadow: 0 30px 50px -30px rgba(0,0,0,.6); }
+    .card .tag {
+      font-family: var(--mono); font-size: .72rem; color: var(--accent-2);
+      border: 1px solid var(--border); border-radius: 6px; padding: 3px 9px;
+      align-self: flex-start; margin-bottom: 18px;
+    }
+    .card-ico {
+      width: 46px; height: 46px; border-radius: 11px;
+      background: rgba(166,217,95,.12);
+      border: 1px solid rgba(166,217,95,.25);
+      display: grid; place-items: center; margin-bottom: 20px;
+      color: var(--accent);
+    }
+    .card h3 { font-size: 1.28rem; font-weight: 600; letter-spacing: -.01em; }
+    .card .desc { color: var(--muted); font-size: .96rem; margin-top: 10px; flex: 1; }
+    .card .feats { list-style: none; margin: 20px 0 0; font-family: var(--mono); font-size: .82rem; }
+    .card .feats li { color: var(--muted); padding: 5px 0; display: flex; gap: 9px; }
+    .card .feats li::before { content: "+"; color: var(--accent-2); }
+    .card-foot { margin-top: 22px; padding-top: 20px; border-top: 1px solid var(--border-soft); display: flex; align-items: baseline; justify-content: space-between; }
+    .card-foot .price { font-family: var(--mono); font-weight: 700; font-size: 1.15rem; color: var(--text); }
+    .card-foot .price small { color: var(--faint); font-weight: 400; font-size: .72rem; }
+    .card-foot .dur { font-family: var(--mono); font-size: .78rem; color: var(--muted); }
+
+    /* ============ REVIEWS ============ */
+    .reviews { background: var(--bg2); border-top: 1px solid var(--border-soft); border-bottom: 1px solid var(--border-soft); }
+    .review-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; margin-top: 50px; }
+    .review {
+      background: var(--surface);
+      border: 1px solid var(--border-soft);
+      border-radius: var(--radius);
+      padding: 30px 28px;
+      display: flex; flex-direction: column;
+    }
+    .review .quote { font-size: 1.05rem; color: var(--text); flex: 1; }
+    .review .quote::before { content: "“"; font-family: var(--mono); color: var(--accent); font-size: 2rem; line-height: 0; vertical-align: -.4em; margin-right: 4px; }
+    .review .stars { color: var(--tok-num); font-size: .9rem; letter-spacing: 2px; margin-bottom: 16px; }
+    .review .person { display: flex; align-items: center; gap: 13px; margin-top: 24px; }
+    .avatar {
+      width: 46px; height: 46px; border-radius: 50%;
+      display: grid; place-items: center;
+      font-family: var(--mono); font-weight: 700; font-size: 1rem;
+      color: #0C1108; flex: none;
+    }
+    .review .name { font-weight: 600; font-size: .98rem; }
+    .review .role { color: var(--muted); font-size: .82rem; font-family: var(--mono); }
+
+    /* ============ CONTACT ============ */
+    .contact-grid { display: grid; grid-template-columns: 1.1fr .9fr; gap: 48px; align-items: start; }
+    .form { background: var(--surface); border: 1px solid var(--border-soft); border-radius: var(--radius); padding: 34px; }
+    .field { margin-bottom: 18px; }
+    .field label { display: block; font-family: var(--mono); font-size: .8rem; color: var(--muted); margin-bottom: 8px; }
+    .field label .req { color: var(--accent); }
+    .field input, .field textarea {
+      width: 100%;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 14px;
+      color: var(--text);
+      font-family: var(--sans);
+      font-size: .98rem;
+      transition: border-color .2s, box-shadow .2s;
+    }
+    .field input:focus, .field textarea:focus {
+      outline: none; border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(166,217,95,.18);
+    }
+    .field textarea { resize: vertical; min-height: 96px; }
+    .field.invalid input, .field.invalid textarea { border-color: #FF6B5E; }
+    .err { color: #FF8A7E; font-size: .78rem; font-family: var(--mono); margin-top: 6px; display: none; }
+    .field.invalid .err { display: block; }
+    .form .btn-primary { width: 100%; justify-content: center; margin-top: 6px; }
+    .form-success {
+      display: none;
+      align-items: center; gap: 10px;
+      background: rgba(111,224,138,.1);
+      border: 1px solid rgba(111,224,138,.35);
+      color: var(--accent-2);
+      font-family: var(--mono); font-size: .9rem;
+      padding: 14px 16px; border-radius: 10px; margin-top: 18px;
+    }
+    .form-success.show { display: flex; }
+    .form-error {
+      display: none;
+      align-items: center; gap: 10px;
+      background: rgba(255,107,94,.1);
+      border: 1px solid rgba(255,107,94,.35);
+      color: #FF8A7E;
+      font-family: var(--mono); font-size: .9rem;
+      padding: 14px 16px; border-radius: 10px; margin-top: 18px;
+    }
+    .form-error.show { display: flex; }
+
+    .contact-info .info-item { display: flex; gap: 16px; padding: 20px 0; border-bottom: 1px solid var(--border-soft); }
+    .contact-info .info-item:last-child { border-bottom: none; }
+    .info-ico {
+      width: 42px; height: 42px; flex: none; border-radius: 11px;
+      background: var(--surface); border: 1px solid var(--border);
+      display: grid; place-items: center; color: var(--accent-2);
+    }
+    .info-item .k { font-family: var(--mono); font-size: .78rem; color: var(--muted); }
+    .info-item .v { font-size: 1rem; color: var(--text); margin-top: 3px; }
+
+    /* ============ FOOTER ============ */
+    footer { border-top: 1px solid var(--border-soft); padding: 56px 0 34px; }
+    .foot-top { display: flex; justify-content: space-between; gap: 40px; flex-wrap: wrap; align-items: flex-start; }
+    .foot-brand { max-width: 320px; }
+    .foot-brand p { color: var(--muted); font-size: .92rem; margin-top: 12px; }
+    .foot-hotline {
+      text-align: right;
+    }
+    .foot-hotline .k { font-family: var(--mono); font-size: .78rem; color: var(--muted); }
+    .foot-hotline .num {
+      font-family: var(--mono); font-weight: 700;
+      font-size: clamp(1.4rem, 3vw, 1.9rem);
+      color: var(--accent-2); letter-spacing: -.02em; margin-top: 4px;
+    }
+    .socials { display: flex; gap: 12px; margin-top: 18px; justify-content: flex-end; }
+    .socials a {
+      width: 40px; height: 40px; border-radius: 10px;
+      background: var(--surface); border: 1px solid var(--border);
+      display: grid; place-items: center; color: var(--muted);
+      transition: .25s var(--ease);
+    }
+    .socials a:hover { color: var(--accent); border-color: var(--accent); transform: translateY(-3px); }
+    .foot-bottom {
+      margin-top: 40px; padding-top: 24px; border-top: 1px solid var(--border-soft);
+      display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+      font-size: .85rem; color: var(--faint); font-family: var(--mono);
+    }
+
+    /* ============ SCROLL REVEAL ============ */
+    .reveal { opacity: 0; transform: translateY(28px); transition: opacity .7s var(--ease), transform .7s var(--ease); }
+    .reveal.in { opacity: 1; transform: none; }
+    .reveal.d1 { transition-delay: .08s; }
+    .reveal.d2 { transition-delay: .16s; }
+    .reveal.d3 { transition-delay: .24s; }
+
+    /* ============ RESPONSIVE ============ */
+    @media (max-width: 900px) {
+      .hero-grid, .about-grid, .contact-grid { grid-template-columns: 1fr; gap: 40px; }
+      .cards, .review-cards { grid-template-columns: 1fr; }
+      .editor { order: -1; }
+      .menu {
+        position: fixed; top: 72px; left: 0; right: 0;
+        flex-direction: column; align-items: stretch; gap: 0;
+        background: rgba(12,17,8,.97); backdrop-filter: blur(14px);
+        border-bottom: 1px solid var(--border);
+        padding: 12px 24px 24px;
+        transform: translateY(-130%);
+        transition: transform .35s var(--ease);
+        height: auto;
+      }
+      .menu.open { transform: translateY(0); }
+      .menu a.nav-link { padding: 14px 0; border-bottom: 1px solid var(--border-soft); }
+      .menu a.nav-link::after { display: none; }
+      .menu .btn { margin-top: 14px; justify-content: center; }
+      .hamburger { display: flex; }
+    }
+    @media (max-width: 540px) {
+      .stats { grid-template-columns: 1fr; }
+      .foot-top, .foot-bottom { flex-direction: column; }
+      .foot-hotline, .socials { text-align: left; justify-content: flex-start; }
+      .hero-cta .btn { flex: 1; justify-content: center; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      * { animation: none !important; scroll-behavior: auto; }
+      .reveal { opacity: 1; transform: none; transition: none; }
+      .code-line { opacity: 1; transform: none; }
+      .ghost { opacity: 1; }
+      .accept-hint { opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ===== HEADER ===== -->
+  <header id="header">
+    <div class="wrap nav">
+      <a href="#top" class="logo"><span class="b">synapse</span><span class="caret">_</span></a>
+      <nav class="menu" id="menu">
+        <a class="nav-link" href="#about">Giới thiệu</a>
+        <a class="nav-link" href="#courses">Sản phẩm</a>
+        <a class="nav-link" href="#reviews">Phản hồi</a>
+        <a class="nav-link" href="#contact">Liên hệ</a>
+        <a class="btn btn-primary" href="#contact">Học thử miễn phí</a>
+      </nav>
+      <button class="hamburger" id="hamburger" aria-label="Mở menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </header>
+
+  <main id="top">
+
+    <!-- ===== HERO ===== -->
+    <section class="section hero">
+      <div class="wrap hero-grid">
+        <div class="hero-left reveal">
+          <span class="hero-badge"><span class="dot"></span> Khoá mới khai giảng — Q3/2026</span>
+          <h1>Biến ý tưởng thành <span class="hl">sản phẩm</span>, code cùng AI trong vài phút.</h1>
+          <p class="sub">Học cách dùng AI agent để viết, đọc và sửa code thực chiến. Lộ trình từ zero đến full-stack, có mentor đồng hành và trợ lý AI bên cạnh 24/7.</p>
+          <div class="hero-cta">
+            <a href="#contact" class="btn btn-primary">→ Học thử miễn phí</a>
+            <a href="#courses" class="btn btn-ghost">Xem lộ trình</a>
+          </div>
+          <div class="hero-meta">
+            <span><b>8.000+</b> học viên</span>
+            <span><b>95%</b> ra sản phẩm thực tế</span>
+            <span><b>4.9/5</b> đánh giá</span>
+          </div>
+        </div>
+
+        <!-- signature: AI streaming editor -->
+        <div class="editor reveal d1" aria-hidden="true">
+          <div class="editor-bar">
+            <div class="lights"><i></i><i></i><i></i></div>
+            <span class="editor-file">auth.js <span class="ext">— synapse/demo</span></span>
+          </div>
+          <div class="editor-body" id="editorBody">
+            <div class="code-line"><span class="tok-com">// Prompt: viết hàm đăng nhập có xác thực OTP</span></div>
+            <div class="code-line"><span><span class="tok-key">const</span> <span class="tok-fn">dangNhap</span> = <span class="tok-key">async</span> (sdt) =&gt; {</span></div>
+            <div class="code-line"><span class="ind"><span class="tok-key">const</span> otp = <span class="tok-key">await</span> <span class="tok-fn">guiOTP</span>(sdt);</span></div>
+            <div class="code-line"><span class="ind"><span class="tok-key">const</span> ok = <span class="tok-key">await</span> <span class="tok-fn">xacThuc</span>(otp);</span></div>
+            <div class="code-line" data-ghost="true"><span class="ind ghost"><span class="tok-key">return</span> ok ? <span class="tok-fn">taoPhien</span>(sdt) : <span class="tok-num">null</span>;</span></div>
+            <div class="code-line"><span>}</span></div>
+          </div>
+          <div class="accept-hint" id="acceptHint"><span class="key">Tab ↹</span> AI gợi ý — nhấn để chấp nhận</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== ABOUT ===== -->
+    <section class="section" id="about">
+      <div class="wrap about-grid">
+        <div class="about-text reveal">
+          <span class="eyebrow"><span class="c">//</span> giới thiệu</span>
+          <h2 class="title">Không chỉ học cú pháp — học cách<br>nghĩ và xây cùng AI.</h2>
+          <p>Synapse Academy ra đời cho thế hệ lập trình viên mới: những người dùng AI như một cộng sự thực thụ. Thay vì học thuộc framework, bạn học cách <strong>ra đề bài, đọc hiểu và kiểm soát</strong> code do AI sinh ra.</p>
+          <p>Mỗi học viên đi qua các dự án thực tế — từ landing page, REST API đến ứng dụng tích hợp LLM — với mentor review code và một trợ lý AI riêng hỗ trợ mọi lúc.</p>
+          <p>Triết lý của chúng tôi rất rõ ràng: <strong>AI viết nhanh, bạn quyết định đúng.</strong></p>
+        </div>
+        <div class="stats reveal d1">
+          <div class="stat"><span class="plus">+</span><div class="num" data-target="8000" data-suffix="+">0</div><div class="lbl">Học viên đã đào tạo</div></div>
+          <div class="stat"><span class="plus">+</span><div class="num" data-target="95" data-suffix="%">0</div><div class="lbl">Hoàn thành có sản phẩm</div></div>
+          <div class="stat"><span class="plus">+</span><div class="num" data-target="40" data-suffix="+">0</div><div class="lbl">Dự án mẫu thực chiến</div></div>
+          <div class="stat"><span class="plus">+</span><div class="num" data-target="12" data-suffix="">0</div><div class="lbl">Lộ trình chuyên sâu</div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== COURSES ===== -->
+    <section class="section" id="courses">
+      <div class="wrap">
+        <div class="courses-head reveal">
+          <div>
+            <span class="eyebrow"><span class="c">//</span> lộ trình học</span>
+            <h2 class="title">Chọn đường đi của bạn</h2>
+          </div>
+          <p class="lead">Ba lộ trình thiết kế theo từng giai đoạn — học tuần tự hoặc nhảy vào đúng nơi bạn đang đứng.</p>
+        </div>
+        <div class="cards">
+          <article class="card reveal">
+            <span class="tag">cơ bản</span>
+            <div class="card-ico">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="8 6 3 12 8 18"/><polyline points="16 6 21 12 16 18"/></svg>
+            </div>
+            <h3>AI Coding Foundation</h3>
+            <p class="desc">Làm chủ prompt, autocomplete và AI agent. Đặt nền tảng để code cùng AI một cách có kiểm soát.</p>
+            <ul class="feats">
+              <li>Tư duy prompt & đọc code AI sinh</li>
+              <li>Làm chủ editor + AI agent</li>
+              <li>3 dự án mini thực tế</li>
+            </ul>
+            <div class="card-foot">
+              <span class="price">2.9tr <small>/ khoá</small></span>
+              <span class="dur">6 tuần</span>
+            </div>
+          </article>
+
+          <article class="card reveal d1">
+            <span class="tag">trọng tâm</span>
+            <div class="card-ico">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+            </div>
+            <h3>Full-stack với AI</h3>
+            <p class="desc">Xây ứng dụng web hoàn chỉnh: frontend, backend, database — tăng tốc gấp nhiều lần với AI agent.</p>
+            <ul class="feats">
+              <li>React + Node + database</li>
+              <li>Debug & refactor cùng AI</li>
+              <li>1 sản phẩm full-stack hoàn chỉnh</li>
+            </ul>
+            <div class="card-foot">
+              <span class="price">5.5tr <small>/ khoá</small></span>
+              <span class="dur">10 tuần</span>
+            </div>
+          </article>
+
+          <article class="card reveal d2">
+            <span class="tag">nâng cao</span>
+            <div class="card-ico">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4M5 5l3 3M16 16l3 3M19 5l-3 3M8 16l-3 3"/></svg>
+            </div>
+            <h3>Ship sản phẩm AI</h3>
+            <p class="desc">Tích hợp LLM, RAG và agent vào sản phẩm thật. Từ ý tưởng đến bản chạy được, sẵn sàng ra mắt.</p>
+            <ul class="feats">
+              <li>Gọi & tối ưu LLM API</li>
+              <li>Xây RAG + AI agent</li>
+              <li>Deploy sản phẩm thực tế</li>
+            </ul>
+            <div class="card-foot">
+              <span class="price">7.9tr <small>/ khoá</small></span>
+              <span class="dur">8 tuần</span>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== REVIEWS ===== -->
+    <section class="section reviews" id="reviews">
+      <div class="wrap">
+        <div class="reveal">
+          <span class="eyebrow"><span class="c">//</span> phản hồi học viên</span>
+          <h2 class="title">Người thật, sản phẩm thật</h2>
+        </div>
+        <div class="review-cards">
+          <article class="review reveal">
+            <div class="stars">★★★★★</div>
+            <p class="quote">Mình build được app đầu tiên sau 3 tuần. Quan trọng là AI giúp mình <em>hiểu</em> code chứ không chỉ copy đại.</p>
+            <div class="person">
+              <div class="avatar" style="background:linear-gradient(135deg,#A6D95F,#6FE08A)">MA</div>
+              <div><div class="name">Minh Anh</div><div class="role">Sinh viên CNTT</div></div>
+            </div>
+          </article>
+
+          <article class="review reveal d1">
+            <div class="stars">★★★★★</div>
+            <p class="quote">Đội mình ship MVP nhanh gấp đôi sau khoá học. Nội dung cực kỳ thực chiến, không lý thuyết suông.</p>
+            <div class="person">
+              <div class="avatar" style="background:linear-gradient(135deg,#E0C98B,#A6D95F)">ĐH</div>
+              <div><div class="name">Đức Hùng</div><div class="role">Founder startup</div></div>
+            </div>
+          </article>
+
+          <article class="review reveal d2">
+            <div class="stars">★★★★★</div>
+            <p class="quote">Không biết code mà giờ tự làm được automation cho công việc. Mentor support nhiệt tình, rất đáng tiền.</p>
+            <div class="person">
+              <div class="avatar" style="background:linear-gradient(135deg,#6FE08A,#E6B45C)">TT</div>
+              <div><div class="name">Thu Trang</div><div class="role">Marketer chuyển ngành</div></div>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== CONTACT ===== -->
+    <section class="section" id="contact">
+      <div class="wrap">
+        <div class="reveal" style="margin-bottom:50px">
+          <span class="eyebrow"><span class="c">//</span> đăng ký tư vấn</span>
+          <h2 class="title">Bắt đầu hành trình của bạn</h2>
+          <p class="lead">Để lại thông tin — đội ngũ Synapse sẽ liên hệ tư vấn lộ trình phù hợp trong vòng 24 giờ.</p>
+        </div>
+        <div class="contact-grid">
+          <form class="form reveal" id="contactForm" action="https://formspree.io/f/mykavzgq" method="POST" novalidate>
+            <div class="field" id="f-name">
+              <label>Họ và tên <span class="req">*</span></label>
+              <input type="text" name="name" placeholder="Nguyễn Văn A" />
+              <div class="err">Vui lòng nhập họ tên.</div>
+            </div>
+            <div class="field" id="f-phone">
+              <label>Số điện thoại <span class="req">*</span></label>
+              <input type="tel" name="phone" placeholder="09xx xxx xxx" />
+              <div class="err">Số điện thoại không hợp lệ (9–11 chữ số).</div>
+            </div>
+            <div class="field" id="f-email">
+              <label>Email <span class="req">*</span></label>
+              <input type="email" name="email" placeholder="ban@email.com" />
+              <div class="err">Email không hợp lệ.</div>
+            </div>
+            <div class="field" id="f-msg">
+              <label>Nội dung</label>
+              <textarea name="message" placeholder="Mình muốn tư vấn lộ trình Full-stack với AI..."></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary">Gửi đăng ký →</button>
+            <div class="form-success" id="formSuccess">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              Đã gửi thành công! Synapse sẽ liên hệ với bạn sớm.
+            </div>
+            <div class="form-error" id="formError">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+              Gửi không thành công. Vui lòng thử lại hoặc gọi hotline 1900 6868.
+            </div>
+          </form>
+
+          <div class="contact-info reveal d1">
+            <div class="info-item">
+              <div class="info-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 12-9 12s-9-5-9-12a9 9 0 0 1 18 0Z"/><circle cx="12" cy="10" r="3"/></svg></div>
+              <div><div class="k">Địa chỉ</div><div class="v">Tầng 8, Innovation Tower, 123 Nguyễn Văn Linh, Q.7, TP.HCM</div></div>
+            </div>
+            <div class="info-item">
+              <div class="info-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92Z"/></svg></div>
+              <div><div class="k">Hotline</div><div class="v">1900 6868</div></div>
+            </div>
+            <div class="info-item">
+              <div class="info-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 5L2 7"/></svg></div>
+              <div><div class="k">Email</div><div class="v">hello@synapse.edu.vn</div></div>
+            </div>
+            <div class="info-item">
+              <div class="info-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
+              <div><div class="k">Giờ làm việc</div><div class="v">T2–T7: 8:30 – 21:00</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ===== FOOTER ===== -->
+  <footer>
+    <div class="wrap">
+      <div class="foot-top">
+        <div class="foot-brand">
+          <a href="#top" class="logo"><span class="b">synapse</span><span class="caret">_</span></a>
+          <p>Học viện lập trình AI Coding — nơi bạn học cách xây sản phẩm thật cùng trí tuệ nhân tạo.</p>
+        </div>
+        <div class="foot-hotline">
+          <div class="k">// hotline tư vấn</div>
+          <div class="num">1900 6868</div>
+          <div class="socials">
+            <a href="#" aria-label="Facebook"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M22 12a10 10 0 1 0-11.6 9.9v-7H7.9V12h2.5V9.8c0-2.5 1.5-3.9 3.8-3.9 1.1 0 2.2.2 2.2.2v2.5h-1.3c-1.2 0-1.6.8-1.6 1.6V12h2.8l-.4 2.9h-2.4v7A10 10 0 0 0 22 12Z"/></svg></a>
+            <a href="#" aria-label="YouTube"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.3-.4-4.9a2.6 2.6 0 0 0-1.8-1.8C19.2 5 12 5 12 5s-7.2 0-8.8.4A2.6 2.6 0 0 0 1.4 7.2C1 8.7 1 12 1 12s0 3.3.4 4.9a2.6 2.6 0 0 0 1.8 1.8C4.8 19 12 19 12 19s7.2 0 8.8-.4a2.6 2.6 0 0 0 1.8-1.8C23 15.3 23 12 23 12ZM9.8 15.3V8.7l5.7 3.3Z"/></svg></a>
+            <a href="#" aria-label="Zalo"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.5 2 2 5.9 2 10.7c0 2.7 1.4 5.1 3.7 6.7-.2.8-.7 2.1-1.4 3.1-.2.3 0 .7.4.6 1.8-.5 3.3-1.3 4.1-1.9 1 .2 2.1.4 3.2.4 5.5 0 10-3.9 10-8.7S17.5 2 12 2Z"/></svg></a>
+          </div>
+        </div>
+      </div>
+      <div class="foot-bottom">
+        <span>© 2026 Synapse Academy. Bảo lưu mọi quyền.</span>
+        <span>Lập trình AI Coding · TP. Hồ Chí Minh</span>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // ----- sticky header -----
+    const header = document.getElementById('header');
+    const onScroll = () => header.classList.toggle('scrolled', window.scrollY > 20);
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+
+    // ----- mobile menu -----
+    const burger = document.getElementById('hamburger');
+    const menu = document.getElementById('menu');
+    burger.addEventListener('click', () => {
+      const open = menu.classList.toggle('open');
+      burger.classList.toggle('open', open);
+      burger.setAttribute('aria-expanded', open);
+    });
+    menu.querySelectorAll('a').forEach(a => a.addEventListener('click', () => {
+      menu.classList.remove('open'); burger.classList.remove('open');
+      burger.setAttribute('aria-expanded', false);
+    }));
+
+    // ----- scroll reveal -----
+    const revealObs = new IntersectionObserver((entries) => {
+      entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); revealObs.unobserve(e.target); } });
+    }, { threshold: 0.14 });
+    document.querySelectorAll('.reveal').forEach(el => revealObs.observe(el));
+
+    // ----- counter animation -----
+    const countObs = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (!e.isIntersecting) return;
+        const el = e.target;
+        const target = +el.dataset.target;
+        const suffix = el.dataset.suffix || '';
+        const dur = 1500; const t0 = performance.now();
+        const tick = (now) => {
+          const p = Math.min((now - t0) / dur, 1);
+          const eased = 1 - Math.pow(1 - p, 3);
+          const val = Math.floor(eased * target);
+          el.textContent = val.toLocaleString('vi-VN') + suffix;
+          if (p < 1) requestAnimationFrame(tick);
+          else el.textContent = target.toLocaleString('vi-VN') + suffix;
+        };
+        requestAnimationFrame(tick);
+        countObs.unobserve(el);
+      });
+    }, { threshold: 0.5 });
+    document.querySelectorAll('.num[data-target]').forEach(el => countObs.observe(el));
+
+    // ----- hero editor: AI streaming + accept -----
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const lines = document.querySelectorAll('#editorBody .code-line');
+    const hint = document.getElementById('acceptHint');
+
+    function playEditor() {
+      lines.forEach(l => { l.classList.remove('shown', 'accepted'); });
+      hint.classList.remove('show');
+      let i = 0;
+      const step = () => {
+        if (i >= lines.length) {
+          // accept the ghost suggestion
+          const ghostLine = document.querySelector('.code-line[data-ghost]');
+          setTimeout(() => {
+            hint.classList.add('show');
+            setTimeout(() => { ghostLine.classList.add('accepted'); hint.classList.remove('show'); }, 1100);
+          }, 400);
+          // loop
+          setTimeout(playEditor, 6500);
+          return;
+        }
+        lines[i].classList.add('shown');
+        i++;
+        setTimeout(step, 480);
+      };
+      step();
+    }
+
+    if (reduceMotion) {
+      lines.forEach(l => l.classList.add('shown'));
+      document.querySelector('.code-line[data-ghost]')?.classList.add('accepted');
+    } else {
+      // start when hero editor is visible
+      const heroObs = new IntersectionObserver((entries) => {
+        entries.forEach(e => { if (e.isIntersecting) { playEditor(); heroObs.disconnect(); } });
+      }, { threshold: 0.3 });
+      heroObs.observe(document.getElementById('editorBody'));
+    }
+
+    // ----- contact form validation + Formspree submit -----
+    const form = document.getElementById('contactForm');
+    const success = document.getElementById('formSuccess');
+    const errorBox = document.getElementById('formError');
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const setInvalid = (id, bad) => document.getElementById(id).classList.toggle('invalid', bad);
+
+    form.addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      const name = form.name.value.trim();
+      const phone = form.phone.value.trim();
+      const email = form.email.value.trim();
+
+      const nameBad = name.length < 2;
+      const phoneBad = !/^[0-9\s+().-]{9,15}$/.test(phone) || (phone.replace(/\D/g, '').length < 9);
+      const emailBad = !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+
+      setInvalid('f-name', nameBad);
+      setInvalid('f-phone', phoneBad);
+      setInvalid('f-email', emailBad);
+
+      success.classList.remove('show');
+      errorBox.classList.remove('show');
+
+      if (nameBad || phoneBad || emailBad) return;
+
+      // send to Formspree
+      const btnText = submitBtn.textContent;
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Đang gửi...';
+      try {
+        const res = await fetch(form.action, {
+          method: 'POST',
+          headers: { 'Accept': 'application/json' },
+          body: new FormData(form),
+        });
+        if (res.ok) {
+          success.classList.add('show');
+          form.reset();
+          setTimeout(() => success.classList.remove('show'), 6000);
+        } else {
+          errorBox.classList.add('show');
+        }
+      } catch (_) {
+        errorBox.classList.add('show');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = btnText;
+      }
+    });
+
+    // clear error on input
+    ['f-name', 'f-phone', 'f-email'].forEach(id => {
+      document.getElementById(id).querySelector('input')
+        .addEventListener('input', () => document.getElementById(id).classList.remove('invalid'));
+    });
+  </script>
+</body>
+</html>
